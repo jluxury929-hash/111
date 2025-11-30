@@ -14,16 +14,12 @@ const app = express();
 app.use(cors({ origin: '*', methods: ['GET', 'POST', 'OPTIONS'] }));
 app.use(express.json());
 
+// Using a specific port for the Strategy Engine
 const PORT = process.env.STRATEGY_PORT || 8081;
 
 // ===============================================================================
 // CONFIGURATION
 // ===============================================================================
-
-// Check for a dedicated, stable RPC URL via environment variable (Recommended for stability)
-// You would set this variable in your deployment environment, e.g.,
-// ETHERSCAN_API_KEY=YourEtherscanKeyHere
-// ETHERSCAN_RPC_URL=https://mainnet.eth.blockscan.com/rpc/{YourEtherscanKey}
 
 const ETHERSCAN_RPC_URL = process.env.ETHERSCAN_RPC_URL;
 
@@ -38,7 +34,6 @@ let RPC_URLS = [
 ];
 
 if (ETHERSCAN_RPC_URL) {
-    // If a stable, dedicated URL is provided, put it first for the FallbackProvider to prefer it.
     RPC_URLS.unshift(ETHERSCAN_RPC_URL);
     console.log("✅ Using secure RPC URL from environment variable for primary connection.");
 } else {
@@ -59,16 +54,13 @@ let monitorStatus = 'initializing';
 let lastMonitorRun = null;
 
 // ===============================================================================
-// PROVIDER INITIALIZATION WITH FALLBACK (The requested robust implementation)
+// PROVIDER INITIALIZATION WITH FALLBACK
 // ===============================================================================
 
 async function initProvider() {
     monitorStatus = 'connecting';
     try {
-        // FIX: Use StaticJsonRpcProvider instead of JsonRpcProvider. 
-        // This is often better for FallbackProvider inputs, as it reduces 
-        // immediate, noisy connection attempts upon instantiation from potentially 
-        // failing public endpoints.
+        // FIX: Using StaticJsonRpcProvider to prevent connection spam from public RPCs
         const providers = RPC_URLS.map(url => new ethers.StaticJsonRpcProvider(url, 'mainnet'));
         
         // Use FallbackProvider for robustness and automatic failover
